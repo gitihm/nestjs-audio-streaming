@@ -36,8 +36,6 @@ export class UploadController {
       let trackName = file[0].originalname;
 
       const readableTrackStream = new Readable();
-      console.log(file[0].buffer);
-      console.log(file[0]);
       
       readableTrackStream.push(file[0].buffer);
       readableTrackStream.push(null);
