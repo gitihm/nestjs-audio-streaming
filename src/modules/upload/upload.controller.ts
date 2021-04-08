@@ -14,6 +14,7 @@ import multerConfig from './multer/multer.config';
 import { Readable } from 'stream'
 
 import * as mongoose from 'mongoose'
+const ObjectID = require('mongodb').ObjectID;
 
 mongoose.connect(
   `mongodb://myuser:secret@localhost:27017/mydatabase`,
@@ -28,19 +29,17 @@ mongoose.connect(
 @Controller('audio')
 export class UploadController {
   @Post()
-  @UseInterceptors(FilesInterceptor('file', 1))
+  @UseInterceptors(FilesInterceptor('file', 1, multerConfig))
   async upload_image(@Req() req, @UploadedFiles() file, @Res() res) {
     let status = HttpStatus.OK;
-    console.log();
-
-    console.log(file);
     if (file) {
-
-
       let trackName = file[0].originalname;
 
       const readableTrackStream = new Readable();
-      readableTrackStream.push(req.files[0].buffer);
+      console.log(file[0].buffer);
+      console.log(file[0]);
+      
+      readableTrackStream.push(file[0].buffer);
       readableTrackStream.push(null);
 
       const gridFSBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
@@ -71,8 +70,10 @@ export class UploadController {
       bucketName: 'audio'
     });
 
-    let downloadStream = gridFSBucket.openDownloadStream(id);
-
+    var trackID = new ObjectID(id);
+    let downloadStream = gridFSBucket.openDownloadStream(trackID);
+    console.log(downloadStream);
+    
     res.set('content-type', 'audio/mp3');
     res.set('accept-ranges', 'bytes');
     downloadStream.on('data', (chunk) => {

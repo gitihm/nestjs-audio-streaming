@@ -4,11 +4,7 @@ import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
-    MulterModule.registerAsync({
-      useFactory: () => ({
-        dest: `../../Data`,
-      }),
-    }),
+    MulterModule.register(),
   ],
   controllers: [UploadController],
   providers: [],
