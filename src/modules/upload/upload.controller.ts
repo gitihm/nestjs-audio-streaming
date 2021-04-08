@@ -70,7 +70,6 @@ export class UploadController {
 
     var trackID = new ObjectID(id);
     let downloadStream = gridFSBucket.openDownloadStream(trackID);
-    console.log(downloadStream);
     
     res.set('content-type', 'audio/mp3');
     res.set('accept-ranges', 'bytes');
