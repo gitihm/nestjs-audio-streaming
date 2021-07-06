@@ -2568,6 +2568,11 @@ figures@^3.0.0:
   dependencies:
     escape-string-regexp "^1.0.5"
 
+file-chunked@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/file-chunked/-/file-chunked-1.0.4.tgz#68f2dc546f1a04e349d5568e9b656694cdb40c68"
+  integrity sha512-2K4ua2m9ESjOoV3WPjvqVEI9i0ff+lKYfJcLIzoxEyS7TLt8mIVeESTa+PzpxH0HKpWqQrV17DM+OPMVgUkQ/Q==
+
 file-entry-cache@^6.0.1:
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/file-entry-cache/-/file-entry-cache-6.0.1.tgz#211b2dd9659cb0394b073e7323ac3c933d522027"

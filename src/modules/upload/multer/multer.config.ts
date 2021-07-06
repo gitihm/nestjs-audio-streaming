@@ -1,14 +1,17 @@
 import * as multer from 'multer';
-
-function randomString() {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-}
+let i = 0
 const multerConfig = {
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 },
-}
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, `${process.cwd()}/Data`);
+    },
+    filename: (req, file, cb) => {
+      console.log("newName" , file);
+    //   cb(null, file.originalname)
+     cb(null, `${i++}.mp4`)
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+};
 
-
-
-
-export default multerConfig
+export default multerConfig;

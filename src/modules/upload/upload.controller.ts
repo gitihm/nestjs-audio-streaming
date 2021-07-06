@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpStatus,
@@ -11,78 +12,87 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express/multer/interceptors/files.interceptor';
 import multerConfig from './multer/multer.config';
-import { Readable } from 'stream'
+import * as fs from 'fs';
+import * as multer from 'multer';
 
-import * as mongoose from 'mongoose'
-const ObjectID = require('mongodb').ObjectID;
+let uploader = (name: string) => {
+  console.log('uploader ', name);
 
-mongoose.connect(
-  `mongodb://myuser:secret@localhost:27017/mydatabase`,
-  {
-    useUnifiedTopology: true,
-    useNewUrlParser: true,
-    useFindAndModify: false,
-  },
-)
+  return multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, `${process.cwd()}/Data`);
+      },
+      filename: (req, file, cb) => {
+        //   cb(null, file.originalname)
+        console.log('name', name);
 
+        cb(null, name);
+      },
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 },
+  }).single('file');
+};
 
 @Controller('audio')
 export class UploadController {
-  @Post()
-  @UseInterceptors(FilesInterceptor('file', 1, multerConfig))
-  async upload_image(@Req() req, @UploadedFiles() file, @Res() res) {
-    let status = HttpStatus.OK;
-    if (file) {
-      let trackName = file[0].originalname;
+  // @UseInterceptors(FilesInterceptor('file', 1, multerConfig))
+  @Post('/:fileName/:id')
+  async upload_image(
+    @Req() req,
+    // @UploadedFiles() file,
+    @Param('fileName') fileName,
+    @Param('id') id,
+    @Res() res,
+  ) {
+    uploader(`${id}-${fileName}`)(req, res, async (err) => {
+      try {
+        if (err) {
+          return res.status(HttpStatus.OK).json({ errorMessage: err });
+        }
+        return res.status(HttpStatus.OK).json({ isSuccess: true });
+      } catch (error) {
+        console.error(error);
 
-      const readableTrackStream = new Readable();
-      
-      readableTrackStream.push(file[0].buffer);
-      readableTrackStream.push(null);
+        return res.status(HttpStatus.OK).json({ errorMessage: error });
+      }
+    });
+  }
 
-      const gridFSBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
-        bucketName: 'audio'
-      });
+  @Post('merge')
+  async merge(
+    @Req() req,
+    @Body('fileName') fileName,
+    @Body('total') total,
+    @Res() res,
+  ) {
+    try {
+      for (let index = 1; index <= +total; index++) {
+        const data = await fs.readFileSync(
+          `${process.cwd()}/Data/${index}-${fileName}`,
+        );
+        // const data = await fs.readFileSync(
+        //   `${process.cwd()}/Data/${index}.mp4`,
+        // );
+        console.log('DATA โวยยย', index, data);
+        await fs.appendFile(
+          `${process.cwd()}/Data/${fileName}`,
+          data,
+          (err) => {
+            console.log(err);
+          },
+        );
+        await fs.unlinkSync(`${process.cwd()}/Data/${index}-${fileName}`);
+        // await fs.unlinkSync(`${process.cwd()}/Data/${index}.mp4`);
+      }
+      return res.status(HttpStatus.OK).json({ isSuccess: true });
+    } catch (error) {
+      console.error(error);
 
-      let uploadStream = gridFSBucket.openUploadStream(trackName);
-      let id = uploadStream.id;
-
-      readableTrackStream.pipe(uploadStream);
-
-      uploadStream.on('error', () => {
-        return res.status(500).json({ message: "Error uploading file" });
-      });
-
-      uploadStream.on('finish', () => {
-        return res.status(201).json({ message: "File uploaded successfully, stored under Mongo ObjectID: " + id });
-      });
-
-    } else {
-      return res.status(status).json({ message: 'select file first' });
+      return res.status(HttpStatus.OK).json({ errorMessage: error });
     }
   }
 
   @Get(':id')
-  getHello(@Param('id') id, @Res() res): any {
-    const gridFSBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
-      bucketName: 'audio'
-    });
-
-    var trackID = new ObjectID(id);
-    let downloadStream = gridFSBucket.openDownloadStream(trackID);
-    
-    res.set('content-type', 'audio/mp3');
-    res.set('accept-ranges', 'bytes');
-    downloadStream.on('data', (chunk) => {
-      res.write(chunk);
-    });
-
-    downloadStream.on('error', () => {
-      res.sendStatus(404);
-    });
-
-    downloadStream.on('end', () => {
-      res.end();
-    });
-  }
+  getHello(@Param('id') id, @Res() res): any {}
 }
